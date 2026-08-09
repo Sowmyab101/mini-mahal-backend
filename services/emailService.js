@@ -1,15 +1,7 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 require("dotenv").config();
 
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendBookingEmail(booking) {
 
@@ -27,362 +19,236 @@ async function sendBookingEmail(booking) {
     const startDate = booking.date.replace(/-/g, "");
     const endDate = booking.date.replace(/-/g, "");
 
-    const startTime = timingMap[timing].start;
-    const endTime = timingMap[timing].end;
+    const selectedTiming = timingMap[timing];
 
-const calendarLink =
-`https://calendar.google.com/calendar/render?action=TEMPLATE` +
-`&text=${encodeURIComponent("Event at Sri Sai Krishna Mahal")}` +
-`&dates=${startDate}T${startTime}/${endDate}T${endTime}` +
-`&details=${encodeURIComponent(
+    if (!selectedTiming) {
+        throw new Error(`Invalid booking timing: ${timing}`);
+    }
+
+    const startTime = selectedTiming.start;
+    const endTime = selectedTiming.end;
+
+    const calendarLink =
+        `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+        `&text=${encodeURIComponent("Event at Sri Sai Krishna Mahal")}` +
+        `&dates=${startDate}T${startTime}/${endDate}T${endTime}` +
+        `&details=${encodeURIComponent(
 `Booking for ${booking.eventType}
 Name: ${booking.name}
 Phone: ${phone}
 Email: ${booking.email}`
-)}` +
-`&location=${encodeURIComponent("Sri Sai Krishna Mahal, YOUR ADDRESS")}`;
+        )}` +
+        `&location=${encodeURIComponent(
+            "Sri Sai Krishna Mahal, Kachalan street, Belliyappa Nagar, Walajapet, Ranipet District, Tamil Nadu"
+        )}`;
 
-    const mailOptions = {
-        from: `"Sri Sai Krishna Mahal" <${process.env.EMAIL_USER}>`,
+    const websiteUrl = "YOUR_WEBSITE_URL";
+
+    const { data, error } = await resend.emails.send({
+        from: "Sri Sai Krishna Mahal <onboarding@resend.dev>",
         to: booking.email,
         subject: "Booking Confirmed",
-         html: `<!DOCTYPE html>
-
+        html: `
+<!DOCTYPE html>
 <html>
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <meta charset="UTF-8">
+    <title>Booking Confirmation</title>
 </head>
 
-<body style="margin:0;background:#f7f4ef;font-family:Arial,sans-serif;">
-
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:30px 0;">
-
-<tr>
-
-<td align="center">
-
-<table width="650" cellpadding="0" cellspacing="0"
-
-style="background:white;border-radius:12px;overflow:hidden;
-box-shadow:0 5px 18px rgba(0,0,0,.15);">
-
-
-<!-- HEADER -->
-
-<tr>
-
-<td align="center"
-
-style="background:#b38f2d;padding:40px;">
-
-<h1 style="color:white;margin:0;font-size:36px;">
-
-Sri Sai Krishna Mahal
-
-</h1>
-
-<p style="color:white;font-size:18px;margin-top:12px;">
-
-✨ Booking Confirmation ✨
-
-</p>
-
-</td>
-
-</tr>
-
-
-<!-- MESSAGE -->
-
-<tr>
-
-<td style="padding:40px;">
-
-<h2 style="color:#7a1c2e;margin-top:0;">
-
-Hello ${booking.name},
-
-</h2>
-
-<p style="font-size:16px;color:#555;line-height:1.8;">
-
-Thank you for choosing
-
-<b>Sri Sai Krishna Mahal.</b>
-
-</p>
-
-<p style="font-size:16px;color:#555;line-height:1.8;">
-
-Your booking has been
-
-<b style="color:green;">
-
-confirmed successfully.
-
-</b>
-
-We are delighted to be a part of your special celebration.
-
-</p>
-
-</td>
-
-</tr>
-
-
-
-<!-- BOOKING DETAILS -->
-
-<tr>
-
-<td style="padding:0 40px 35px;">
-
-
-<table width="100%"
-
-cellpadding="12"
-
-style="border-collapse:collapse;
-background:#faf7f2;
-border:1px solid #e6d7b5;">
-
-<tr>
-
-<td colspan="2"
-
-style="background:#b38f2d;
-color:white;
-font-size:22px;
-text-align:center;">
-
-📋 Booking Details
-
-</td>
-
-</tr>
-
-
-<tr>
-
-<td><b>👤 Name</b></td>
-
-<td>${booking.name}</td>
-
-</tr>
-
-<tr style="background:white;">
-
-<td><b>🎉 Event</b></td>
-
-<td>${booking.eventType}</td>
-
-</tr>
-
-<tr>
-
-<td><b>📅 Date</b></td>
-
-<td>${booking.date}</td>
-
-</tr>
-
-<tr style="background:white;">
-
-<td><b>⏰ Timing</b></td>
-
-<td>${timing}</td>
-
-</tr>
-
-<tr>
-
-<td><b>📞 Phone</b></td>
-
-<td>${booking.phone}</td>
-
-</tr>
-
-<tr style="background:white;">
-
-<td><b>📧 Email</b></td>
-
-<td>${booking.email}</td>
-
-</tr>
-
-</table>
-
-</td>
-
-</tr>
-
-
-
-<!-- BUTTONS -->
-
-<tr>
-
-<td align="center">
-
-<table cellpadding="10">
-
-<tr>
-
-<td>
-
-<a href="${calendarLink}"
-
-style="
-
-background:#34A853;
-
-color:white;
-
-text-decoration:none;
-
-padding:15px 25px;
-
-border-radius:6px;
-
-font-weight:bold;
-
-display:inline-block;
-
-">
-
-📅 Add to Google Calendar
-
-</a>
-
-</td>
-
-<td>
-
-<a href="https://YOUR_WEBSITE_URL"
-
-style="
-
-background:#b38f2d;
-
-color:white;
-
-text-decoration:none;
-
-padding:15px 25px;
-
-border-radius:6px;
-
-font-weight:bold;
-
-display:inline-block;
-
-">
-
-🌐 Visit Website
-
-</a>
-
-</td>
-
-</tr>
-
-</table>
-
-</td>
-
-</tr>
-
-
-
-<!-- CONTACT -->
-
-<tr>
-
-<td style="padding:40px;">
-
-<h3 style="color:#7a1c2e;">
-
-Need Assistance?
-
-</h3>
-
-<p style="line-height:2;color:#555;">
-
-📍 Sri Sai Krishna Mahal
-
-<br>
-
-Kachalan street, Belliyappa Nagar, Walajapet, Ranipent District, Tamil Nadu
-
-<br><br>
-
-📞 +91 93441 64909- Manager Contact
-
-<br><br>
-
-📧 srisaiKrishnaMahal@gmail.com
-
-</p>
-
-</td>
-
-</tr>
-
-
-
-<!-- FOOTER -->
-
-<tr>
-
-<td
-
-style="background:#f4efe4;
-padding:30px;
-text-align:center;
-color:#666;
-font-size:14px;">
-
-Thank you for choosing
-
-<b>Sri Sai Krishna Mahal.</b>
-
-<br><br>
-
-We look forward to making your event
-
-beautiful, memorable, and truly special.
-
-</td>
-
-</tr>
-
-</table>
-
-</td>
-
-</tr>
-
-</table>
+<body style="margin:0;padding:20px;background:#f4efe4;font-family:Arial,sans-serif;">
+
+    <div style="
+        max-width:650px;
+        margin:auto;
+        background:white;
+        border-radius:12px;
+        overflow:hidden;
+        box-shadow:0 5px 18px rgba(0,0,0,.15);
+    ">
+
+        <div style="
+            background:#b38f2d;
+            padding:40px;
+            text-align:center;
+            color:white;
+        ">
+            <h1 style="margin:0 0 10px;">
+                Sri Sai Krishna Mahal
+            </h1>
+
+            <h2 style="margin:0;">
+                ✨ Booking Confirmation ✨
+            </h2>
+        </div>
+
+        <div style="padding:35px;">
+
+            <p>Hello <strong>${booking.name}</strong>,</p>
+
+            <p>
+                Thank you for choosing
+                <strong>Sri Sai Krishna Mahal</strong>.
+            </p>
+
+            <p>
+                Your booking has been
+                <strong>confirmed successfully.</strong>
+            </p>
+
+            <p>
+                We are delighted to be a part of your special celebration.
+            </p>
+
+            <table
+                cellpadding="12"
+                cellspacing="0"
+                width="100%"
+                style="
+                    border-collapse:collapse;
+                    background:#faf7f2;
+                    border:1px solid #e6d7b5;
+                    margin-top:25px;
+                "
+            >
+
+                <tr>
+                    <td colspan="2"
+                        style="
+                            background:#b38f2d;
+                            color:white;
+                            font-size:22px;
+                            text-align:center;
+                            font-weight:bold;
+                        ">
+                        📋 Booking Details
+                    </td>
+                </tr>
+
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>${booking.name}</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Phone</strong></td>
+                    <td>${phone}</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Email</strong></td>
+                    <td>${booking.email}</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Event Type</strong></td>
+                    <td>${booking.eventType}</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Date</strong></td>
+                    <td>${booking.date}</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Timing</strong></td>
+                    <td>${timing}</td>
+                </tr>
+
+            </table>
+
+            <div style="text-align:center;margin-top:30px;">
+
+                <a href="${calendarLink}"
+                   style="
+                       background:#34A853;
+                       color:white;
+                       text-decoration:none;
+                       padding:15px 25px;
+                       border-radius:6px;
+                       font-weight:bold;
+                       display:inline-block;
+                       margin:5px;
+                   ">
+                    📅 Add to Google Calendar
+                </a>
+
+                <a href="${websiteUrl}"
+                   style="
+                       background:#b38f2d;
+                       color:white;
+                       text-decoration:none;
+                       padding:15px 25px;
+                       border-radius:6px;
+                       font-weight:bold;
+                       display:inline-block;
+                       margin:5px;
+                   ">
+                    🌐 Visit Website
+                </a>
+
+            </div>
+
+            <div style="
+                margin-top:35px;
+                padding:20px;
+                background:#faf7f2;
+                border-radius:8px;
+            ">
+
+                <h3>Need Assistance?</h3>
+
+                <p>
+                    📍 Sri Sai Krishna Mahal<br>
+                    Kachalan Street, Belliyappa Nagar,<br>
+                    Walajapet, Ranipet District, Tamil Nadu
+                </p>
+
+                <p>
+                    📞 +91 93441 64909 - Manager Contact
+                </p>
+
+                <p>
+                    📧 srisaiKrishnaMahal@gmail.com
+                </p>
+
+            </div>
+
+        </div>
+
+        <div style="
+            background:#f4efe4;
+            padding:30px;
+            text-align:center;
+            color:#666;
+            font-size:14px;
+        ">
+
+            <p>
+                Thank you for choosing
+                <strong>Sri Sai Krishna Mahal.</strong>
+            </p>
+
+            <p>
+                We look forward to making your event
+                beautiful, memorable, and truly special.
+            </p>
+
+        </div>
+
+    </div>
 
 </body>
-
 </html>
+`
+    });
 
+    if (error) {
+        console.error("Resend email error:", error);
+        throw error;
+    }
 
-
-};`
-
-
-
-
-};
-await transporter.sendMail(mailOptions);
+    console.log("Booking confirmation email sent:", data.id);
 }
 
 module.exports = { sendBookingEmail };
