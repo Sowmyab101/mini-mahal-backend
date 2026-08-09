@@ -42,7 +42,7 @@ Email: ${booking.email}`
             "Sri Sai Krishna Mahal, Kachalan street, Belliyappa Nagar, Walajapet, Ranipet District, Tamil Nadu"
         )}`;
 
-    const websiteUrl = "YOUR_WEBSITE_URL";
+    const websiteUrl = "https://myfirstproject-1cc9f.web.app";
 
     const { data, error } = await resend.emails.send({
         from: "Sri Sai Krishna Mahal <onboarding@resend.dev>",
