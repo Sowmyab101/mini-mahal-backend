@@ -2,7 +2,9 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -41,7 +43,7 @@ Email: ${booking.email}`
 `&location=${encodeURIComponent("Sri Sai Krishna Mahal, YOUR ADDRESS")}`;
 
     const mailOptions = {
-        from: '"Sri Sai Krishna Mahal" <${process.env.EMAIL_USER}>',
+        from: `"Sri Sai Krishna Mahal" <${process.env.EMAIL_USER}>`,
         to: booking.email,
         subject: "Booking Confirmed",
          html: `<!DOCTYPE html>
